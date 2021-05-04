@@ -22,6 +22,16 @@ from decrypt.guardian_load import (
 # - list of all clues (List[GuardianClue])
 # - Tuple of three lists (the train, val, test splits), each is List[GuardianClue]
 # tuple of three lists are the splits for use in training a model
+# 
+# load_guardian_splits() will verify that
+# - total glob length matches the one in paper (ie. number of puzzles)
+# - total clue set length matches the one in paper
+# - one of the clues in our train set matches our train set (i.e. a single clue
+# spot check)
+# if you get an assertion error or an exception during load, please file an
+# issue, since the splits should be identical
+# alternatively, if you don't care, you can pass `verify=False` to
+# `load_guardian_splits`
 
 soln_to_clue_map, all_clues_list, (train, val, test) = load_guardian_splits("./puzzles")
 ```

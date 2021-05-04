@@ -190,7 +190,8 @@ def main():
     fetch_and_store_set(BASE_URL,
                         subsite=k_subsite,
                         json_output_dir=parsed_args.save_directory,
-                        db=url_db, start_idx=k_start_idx, stop_idx=k_end_idx, html_output_dir=None)
+                        db=url_db, start_idx=k_start_idx, stop_idx=k_end_idx,
+                        html_output_dir=None)
 
 
 if __name__ == "__main__":

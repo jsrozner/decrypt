@@ -9,18 +9,19 @@ from pprint import pp
 from typing import *
 from typing import List, Tuple, Dict
 
-
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
-from decrypt.puzzle_clue import BaseClue, GuardianClue, filter_clues, make_stc_map
-from decrypt.util import _gen_filename
-import decrypt.util as util
+from .puzzle_clue import BaseClue, GuardianClue, filter_clues, make_stc_map
+from .util import _gen_filename, hash as safe_hash
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
+# for verification
 k_expected_puz_count = 5518
+k_expected_clue_ct = 142380
+k_5111_clue_text = 'Great issue, relatively speaking'
 
 
 # todo: some clues seem not to be stripped? (i.e. trailing space)
@@ -220,7 +221,8 @@ def clean_and_add_clues_from_guardian_json_puzzle_to_dict(path: str,
 # Methods to load in the json
 ####
 def all_json_files_to_json_list(json_files_dir, subsite, puzzle_dict: Dict,
-                                skip_if_in_dict: bool = True) -> List[GuardianClue]:
+                                skip_if_in_dict: bool = True,
+                                verify=True) -> List[GuardianClue]:
     clue_list: List[GuardianClue] = []
     ctr = Counter()
 
@@ -231,6 +233,11 @@ def all_json_files_to_json_list(json_files_dir, subsite, puzzle_dict: Dict,
     if len(file_glob) != k_expected_puz_count:
         log.warning('File glob is a different size from expected. Your dataset will be different from the one'
                     ' in the paper')
+        if verify:
+            raise NotImplemented('Your glob is different from expected. Manually remove this line '
+                                 'or set verify=False to continue')
+    else:
+        log.info(f'Glob size matches the expected one from Decrypting paper')
 
     for f in tqdm(sorted(file_glob)):
         new_clues = clean_and_add_clues_from_guardian_json_puzzle_to_dict(f, puzzle_dict, ctr,
@@ -242,7 +249,9 @@ def all_json_files_to_json_list(json_files_dir, subsite, puzzle_dict: Dict,
 
 
 def get_clean_clues(json_output_dir,
-                    do_filter_dupes=True) -> Tuple[Dict[str, List[BaseClue]], List[BaseClue]]:
+                    do_filter_dupes=True,
+                    verify=True
+                    ) -> Tuple[Dict[str, List[BaseClue]], List[BaseClue]]:
     log.info(f'loading from {json_output_dir}')
     parsed_puzzles: Dict[str, List[GuardianClue]] = defaultdict(None)  # map from puz_id => List[GuardianClue]
 
@@ -250,7 +259,8 @@ def get_clean_clues(json_output_dir,
     all_clue_list = all_json_files_to_json_list(json_output_dir,
                                                 subsite="cryptic",
                                                 puzzle_dict=parsed_puzzles,
-                                                skip_if_in_dict=True)
+                                                skip_if_in_dict=True,
+                                                verify=verify)
 
     soln_to_clue_map = make_stc_map(all_clue_list)
 
@@ -273,6 +283,10 @@ def get_clean_clues(json_output_dir,
     # Verify same length
     assert sum(map(len, soln_to_clue_map.values())) == len(all_clue_list)
 
+    if verify:
+        assert len(all_clue_list) == 142380, f'Your clues do not match the ones in Decrypting paper'
+        log.info(f'Clue list length matches Decrypting paper expected length')
+
     return soln_to_clue_map, all_clue_list
 
 
@@ -292,18 +306,22 @@ def check_splits(all_clues, input_tuple):
 SplitReturn = Tuple[Dict[str, List[BaseClue]], List[BaseClue], Tuple[List[BaseClue], ...]]
 
 
-def load_guardian_splits(json_dir, seed=42) -> SplitReturn:
-    soln_to_clue_map, all_clues = get_clean_clues(json_dir)
+def load_guardian_splits(json_dir, seed=42, verify=True) -> SplitReturn:
+    soln_to_clue_map, all_clues = get_clean_clues(json_dir, verify=verify)
     train, test = train_test_split(all_clues, test_size=0.2, random_state=seed)
     train, val = train_test_split(train, test_size=0.25, random_state=seed)
 
     check_splits(all_clues, (train, val, test))
 
+    if verify:
+        assert train[5111].clue == k_5111_clue_text, f'Your splits do not match the ones in Decrypting paper'
+        log.info('Verifying splits match Decrypting paper: Spot test clue 5111 has correct text')
+
     return soln_to_clue_map, all_clues, (train, val, test)
 
 
-def load_guardian_splits_disjoint(json_dir, seed=42) -> SplitReturn:
-    soln_to_clue_map, all_clues = get_clean_clues(json_dir)
+def load_guardian_splits_disjoint(json_dir, seed=42, verify=True) -> SplitReturn:
+    soln_to_clue_map, all_clues = get_clean_clues(json_dir, verify=verify)
 
     splits = [0.2, 0.25]
 
@@ -329,16 +347,16 @@ def load_guardian_splits_disjoint(json_dir, seed=42) -> SplitReturn:
     return soln_to_clue_map, all_clues, all_clues_tuple
 
 
-def load_guardian_splits_disjoint_hash(json_dir: str, seed=42) -> SplitReturn:
+def load_guardian_splits_disjoint_hash(json_dir: str, seed=42, verify=True) -> SplitReturn:
     """
     Produce a disjoint split based on hashing the first two letters
     :return: SplitReturn (see this file)
     """
-    soln_to_clue_map, all_clues = get_clean_clues(json_dir)
+    soln_to_clue_map, all_clues = get_clean_clues(json_dir, verify=verify)
 
     train, val, test = [], [], []
     for k, v in soln_to_clue_map.items():
-        h = util.hash(k[:2]) % 5                # normal hash function is not deterministic across python runs
+        h = safe_hash(k[:2]) % 5  # normal hash function is not deterministic across python runs
         if h < 3:
             train.extend(v)
         elif h < 4:
