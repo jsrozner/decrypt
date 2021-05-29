@@ -356,7 +356,7 @@ def load_guardian_splits_disjoint_hash(json_dir: str, seed=42, verify=True) -> S
 
     train, val, test = [], [], []
     for k, v in soln_to_clue_map.items():
-        h = safe_hash(k[:2]) % 5  # normal hash function is not deterministic across python runs
+        h = int(safe_hash(k[:2]), 16) % 5  # normal hash function is not deterministic across python runs
         if h < 3:
             train.extend(v)
         elif h < 4:

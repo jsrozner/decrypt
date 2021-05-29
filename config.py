@@ -45,6 +45,7 @@ class DataDirs:
         #
         # k_names = k_dir / "cryptic-code/data/original/names/"
 
+    # our generated files that are not model inputs
     class Generated:
         xd_cw_clean_json = k_dir / "data/generated/xd_clean.json"
 
@@ -54,4 +55,9 @@ class DataDirs:
 
     class DataExport:
         _base = k_dir / "data/clue_json/"
-        xd_cw_json = _base / "ACW_data"
+        xd_cw_json = _base / "ACW_data"     # curricular
+
+        _guardian_base_dir = k_dir / "data/clue_json/guardian"
+        guardian_naive_random_split = _guardian_base_dir / "naive_random"
+        guardian_naive_disjoint_split = _guardian_base_dir / "naive_disjoint"
+        guardian_word_init_disjoint_split = _guardian_base_dir / "word_init_disjoint"
