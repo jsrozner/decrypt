@@ -1,0 +1,230 @@
+From ab1dd26b2b854c5bb8ed4c99f9b7ccea423a4462 Mon Sep 17 00:00:00 2001
+Date: Thu, 27 May 2021 18:04:51 -0700
+
+---
+ .gitignore                                      |  6 ++
+ pycryptics/data_generators/generate_synonyms.py |  2 +-
+ pycryptics/solve_clue.py                        | 23 +++---
+ timeout.py                                      | 19 +++++
+ validate_cryptics.py                            | 99 +++++++++++++++++++++++++
+ 5 files changed, 139 insertions(+), 10 deletions(-)
+ create mode 100644 timeout.py
+ create mode 100644 validate_cryptics.py
+
+diff --git a/.gitignore b/.gitignore
+index a9aaf4c..d9a9b6c 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -6,3 +6,9 @@ data
+ app_build
+ .ipynb_checkpoints
+ env/*
++
++*.out
++clues/*
++outputs*/
++raw_data/*
++nltk*
+diff --git a/pycryptics/data_generators/generate_synonyms.py b/pycryptics/data_generators/generate_synonyms.py
+index 0207e16..3cb780e 100644
+--- a/pycryptics/data_generators/generate_synonyms.py
++++ b/pycryptics/data_generators/generate_synonyms.py
+@@ -66,7 +66,7 @@ def main():
+     i = 0
+     for word in WORDS:
+         if i % 1000 == 0:
+-            print i, "/", len(WORDS)
++            print(i, "/", len(WORDS))
+         i += 1
+         word = word.lower()
+         syns = map(cleanup, list(synonyms(word)))
+diff --git a/pycryptics/solve_clue.py b/pycryptics/solve_clue.py
+index 1dc76d9..c86a57c 100644
+--- a/pycryptics/solve_clue.py
++++ b/pycryptics/solve_clue.py
+@@ -7,6 +7,7 @@ from pycryptics.grammar.clue_tree import ClueUnsolvableError
+ from collections import namedtuple
+ import re
+ 
++from timeout import TimeoutError
+ 
+ Constraints = namedtuple('Constraints', 'phrases lengths pattern known_answer')
+ 
+@@ -102,13 +103,16 @@ class CrypticClueSolver(object):
+ 
+         self.answers_with_clues = []
+ 
+-        for p in all_phrasings:
+-            constraints = constraints._replace(phrases=p)
+-            # constraints = Constraints(p, lengths, pattern, answer)
+-            if not self.quiet:
+-                print p
+-            for ann_ans in self.solve_constraints(constraints):
+-                self.answers_with_clues.append(ann_ans)
++        try:
++            for p in all_phrasings:
++                constraints = constraints._replace(phrases=p)
++                # constraints = Constraints(p, lengths, pattern, answer)
++                if not self.quiet:
++                    print p
++                for ann_ans in self.solve_constraints(constraints):
++                    self.answers_with_clues.append(ann_ans)
++        except TimeoutError:
++            pass
+         if len(self.answers_with_clues) == 0 and constraints.pattern.replace('.', '') != "":
+             self.answers_with_clues = [PatternAnswer(x, all_phrasings[0]) for x in SYNONYMS if matches_pattern(x, constraints.pattern, constraints.lengths)]
+         self.answers_with_clues.sort(reverse=True)
+@@ -119,7 +123,6 @@ class CrypticClueSolver(object):
+         possible_clues = generate_clues(constraints)
+ 
+         for i, clue in enumerate(possible_clues):
+-            # print "solving:", clue
+             try:
+                 answers = clue.answers
+             except ClueUnsolvableError:
+@@ -137,9 +140,11 @@ def matches_pattern(word, pattern, lengths):
+     return (tuple(len(x) for x in word.split('_')) == lengths) and all(c == pattern[i] or pattern[i] == '.' for i, c in enumerate(word.replace('_', '')))
+ 
+ 
+-def split_clue_text(clue_text):
++def split_clue_text(clue_text, assert_has_answer=False):
+     clue_text = clue_text.encode('ascii', 'ignore')
+     if '|' not in clue_text:
++        if assert_has_answer:
++            raise ValueError('missing an answer for ', clue_text)
+         clue_text += ' |'
+     clue_text = clue_text.lower()
+     clue, paren, rest = clue_text.rpartition('(')
+diff --git a/timeout.py b/timeout.py
+new file mode 100644
+index 0000000..ad44652
+--- /dev/null
++++ b/timeout.py
+@@ -0,0 +1,19 @@
++import signal
++
++class TimeoutError(Exception):
++    pass
++
++def timeout(func, args, timeout_duration, default=None):
++    def handler(signum, frame):
++        raise TimeoutError()
++
++    # set the timeout handler
++    signal.signal(signal.SIGALRM, handler)
++    signal.alarm(timeout_duration)
++    try:
++        result = func(*args)
++    except TimeoutError:
++        result = default
++    finally:
++        signal.alarm(0)
++    return result
+diff --git a/validate_cryptics.py b/validate_cryptics.py
+new file mode 100644
+index 0000000..8978f16
+--- /dev/null
++++ b/validate_cryptics.py
+@@ -0,0 +1,99 @@
++from pycryptics.solve_clue import CrypticClueSolver, split_clue_text
++from collections import Counter
++from tqdm import tqdm
++from timeout import timeout
++
++#k_file = 'clues/guardian_disj2_test.txt'
++
++def normalize_output(s):
++    return s.replace("_"," ").lower()      # handle treatment of underscores
++
++def dump_json(idx, obj):
++    print('dumping json at ', idx)
++    #name = "./outputs/" + k_name + "_" + str(k_start) + "_" + str(idx) + ".json"
++    name = "./" + out_dir + "/" + k_name + "_" + str(k_start) + "_" + str(idx) + ".json"
++    with open(name, 'w') as f:
++        json.dump(obj, f)
++
++def get_answers(solver, clue_text, timeout_len):
++    phrases, lengths, pattern, known_answer = split_clue_text(clue_text, assert_has_answer=True)
++
++    tgt = known_answer.lower().strip()
++    solver.setup(clue_text)
++    answers = timeout(solver.run, args=[], timeout_duration=timeout_len)
++
++    if answers is None: # timed out
++        return -2, []
++
++    return 0, answers, tgt
++
++def validate(timeout_len=20, start_idx=0, end_idx=None):
++    with CrypticClueSolver() as solver:
++        solver.quiet = True
++
++        ct_timed_out = 0
++        ct_error = 0
++        ct_top = 0
++        ct_any_10 = 0
++        num_answers_ctr = Counter()
++
++        output_set = [] # input, tgt, greedy (empty), sampled, timeout, error
++
++        with open(k_file, 'r') as f:
++            for clue_idx, clue_text in enumerate(tqdm(f.readlines())):
++                timeout = False
++                error = False
++
++                if clue_idx < start_idx:
++                    continue
++                if end_idx is not None and clue_idx == end_idx:
++                    break
++                try:
++                    ret_code, answers, tgt = get_answers(solver, clue_text, timeout_len)
++
++                    # errors
++                    if ret_code != 0:
++                        answers = []
++                        if ret_code == -2:
++                            ct_timed_out += 1
++                            timeout = True
++                            print('timed out')
++
++
++                    answers_text = [normalize_output(a.answer) for a in answers]
++                    num_answers_ctr[len(answers_text)] += 1
++
++                    for idx, a in enumerate(answers_text):
++                        if len(a) != len(tgt):
++                            print('invalid length', clue_text)
++                        if a == tgt:
++                            if idx == 0:
++                                ct_top += 1
++                            if idx <= 9:
++                                ct_any_10 += 1
++                            break
++                    output_set.append((clue_idx, clue_text.strip(), tgt, "", answers_text, timeout, error))
++
++                except Exception:
++                     print('got error')
++                     ct_error += 1
++                     error = True
++                     output_set.append((clue_idx, "", "", "", [], timeout, error))
++                 
++    print(ct_timed_out, ct_error, ct_top, ct_any_10, num_answers_ctr)
++    return output_set
++
++import json
++import sys
++if __name__ == "__main__":
++    k_name = sys.argv[1]
++    time_len = int(sys.argv[2])
++    k_start = int(sys.argv[3])
++    k_end = int(sys.argv[4])
++    k_file = sys.argv[5]
++    out_dir = sys.argv[6]
++
++    print(k_file)
++    print(k_name, time_len, k_start, k_end)
++    res = validate(time_len, k_start, k_end)
++    dump_json(-1, res)
+-- 
+2.7.4
+

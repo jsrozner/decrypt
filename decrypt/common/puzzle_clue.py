@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 import re
 import string
@@ -9,7 +10,7 @@ from typing import *
 
 from tqdm import tqdm
 
-log = logging.getLogger(__name__)
+logging.getLogger(__name__)
 
 
 ##################
@@ -98,6 +99,39 @@ class GuardianClue(ClueWithGridInfo):
         )
 
 
+###
+# for seq2seq
+###
+@dataclass
+class Seq2seqDataEntry:
+    idx: int        # unique index for this element in the dataset
+    input: str
+    target: str
+
+    # labels - if needed during run
+    # any additional info? -> can be joined in with a join on idx
+
+    @classmethod
+    def from_base_clue(cls,
+                       gc: BaseClue,
+                       mod_fn: Optional[Callable] = None) -> Seq2seqDataEntry:
+        if mod_fn is None:
+            input = gc.clue_with_lengths()
+        else:
+            input = mod_fn(gc)
+
+        return Seq2seqDataEntry(idx=gc.idx,
+                                input=input,
+                                target=gc.soln_with_spaces)
+
+    @classmethod
+    def to_json_dict(cls, entry: Seq2seqDataEntry):
+        return entry.__dict__.copy()
+
+
+class ClueEncoder(json.JSONEncoder):
+    def default(self, o):
+        return o.__dict__
 ####
 # Functions to go from guardian clue json to a filtered list for use in datasetes
 # todo: roughly copied from guardian_scrape > __main__ ; clean up; i.e. remove from that location

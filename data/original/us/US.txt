@@ -1,0 +1,11 @@
+This dictionary was originally compiled from public domain sources
+for the amSpell spell-checker by
+
+  Erik Frambach (e-mail: e.h.m.frambach@eco.rug.nl).
+
+
+I have further modified this dictionary for use with WinEdt:
+  The dictionary is decompressed, translated from OEM to Windows
+  Character set, and sorted by WinEdt's Dictionary Manager.
+
+alex

@@ -1,1 +1,6 @@
 puzzles/
+
+# data folders but not files
+data/generated/*.json
+data/original/xd/*
+data/clue_json/*

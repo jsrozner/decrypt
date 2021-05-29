@@ -12,7 +12,7 @@ from typing import List, Tuple, Dict
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
-from .puzzle_clue import BaseClue, GuardianClue, filter_clues, make_stc_map
+from decrypt.common.puzzle_clue import BaseClue, GuardianClue, filter_clues, make_stc_map
 from .util import _gen_filename, hash as safe_hash
 
 logging.basicConfig(level=logging.INFO)
@@ -132,7 +132,7 @@ def clean_and_add_clues_from_guardian_json_puzzle_to_dict(path: str,
         ]
         # not_allowed
         # '<',    # invalid html
-        # '†'     # marks a puzzle annotation (additional info)
+        # '†'     # marks a puzzle annotation (i.e. provides additional info)
 
         # make sure clue contains only alpha or allowed chars
         if not clue_text.isalpha():

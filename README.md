@@ -1,16 +1,18 @@
 Repository for Decryping Cryptic Crosswords
+### todo: 
+- add paper link
 
 # Download data
 ```
 git clone git@github.com:jsrozner/decrypt.git
 cd decrypt
-mkdir puzzles
+mkdir -p './data/puzzles'
 python guardian_scrape.py --save_directory="./puzzles"
 ```
 
 # Reproducing our splits
 ```python
-from decrypt.guardian_load import (
+from decrypt.scrape_parse import (
   load_guardian_splits,               # naive random split
   load_guardian_splits_disjoint,      # answer-disjoint split
   load_guardian_splits_disjoint_hash  # word-initial disjoint split
@@ -35,4 +37,13 @@ from decrypt.guardian_load import (
 
 soln_to_clue_map, all_clues_list, (train, val, test) = load_guardian_splits("./puzzles")
 ```
+
+# Reproducing our research
+
+## Baselines
+After completing the above, follow the instruction in the baselines directory.
+
+## Experiments
+To run the experiments you will need to have followed instructions in `baselines/baseline_t5` 
+since that will set up the json files needed, e.g., for curricular learning
 
