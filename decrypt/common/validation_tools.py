@@ -106,7 +106,8 @@ class ModelEval:
                 yield k, v
 
 
-def filter_to_len(tgt_orig: str, sampled: List[str]) -> \
+def filter_to_len(tgt_orig: str, sampled: List[str],
+                  do_filter=True) -> \
     Tuple[List[Tuple[str,str]], List[Tuple[str, str]]]:
     def deduped_filtered_list(input_list: List[Tuple[str,str]]) -> List[Tuple[str,str]]:
         seen = set()
@@ -127,14 +128,18 @@ def filter_to_len(tgt_orig: str, sampled: List[str]) -> \
     filtered: List[Tuple[str,str]] = list(filter(lambda x: len(x[1]) == tgt_len_no_spaces, samples_tuple))
     filtered = deduped_filtered_list(filtered)
 
-    return samples_tuple, filtered
+    if do_filter:
+        return samples_tuple, filtered
+    else:
+        return samples_tuple, samples_tuple
 
 
 # todo: should be part of the ModelEval class
 def eval(mp: ModelPrediction,
          sample_size=10,
          filter_sample_size=10,
-         pre_truncate: Optional[int] = None) -> ModelEval:
+         pre_truncate: Optional[int] = None,
+         do_filter=True) -> ModelEval:
     """
     1) add labels:
         - number of words == number of spaces
@@ -184,7 +189,7 @@ def eval(mp: ModelPrediction,
     tgt_len_no_spaces = len(tgt_no_spaces)
 
     # these are a non-deduped list of tuples (orig, orig_no_spaces) and a deduped list of the same
-    samples_tuple, filtered = filter_to_len(tgt_orig, sampled)
+    samples_tuple, filtered = filter_to_len(tgt_orig, sampled, do_filter=do_filter)
 
     if len(filtered) == 0:
         output_eval.metrics.top_match_none = True
@@ -331,11 +336,8 @@ def all_aggregate(mp_set: List[ModelPrediction],
 # set inclusion filter functions
 ###
 
-def make_set_filter(type: str) -> Callable:
-    with open('clue_labels.json', 'r') as f:
-        _clue_labels = json.load(f)
-        logging.info(f'Opened clue labels file:')
-    inclusion_set = set(_clue_labels[type])
+def make_set_filter(labels_set: Dict[str, Set[int]], type: str) -> Callable:
+    inclusion_set = labels_set[type]
 
     def check_inclusion(mp: ModelPrediction):
         if mp.idx in inclusion_set:
@@ -425,3 +427,40 @@ def load_deits(val_set: Union[List[GuardianClue], List[str]],
             print(i)
 
     return model_outputs
+
+
+###
+# t5
+###
+
+def load_and_run_t5(fname, label=None, filter_fcn=None, pre_truncate=None,
+                    do_length_filter=True):
+    def load_t5(json_out_file: str, pre_truncate=None):
+        with open(json_out_file, 'r') as f:
+            json_blob = json.load(f)
+
+        # eval (and backfill)
+        model_outputs = []
+        idx_set = set()
+        for d in json_blob:
+            idx, input, tgt, greedy, sampled = d
+            assert idx not in idx_set
+            idx_set.add(idx)
+
+            mp = ModelPrediction(idx, input, tgt, greedy, sampled)
+            mp.model_eval = eval(mp, pre_truncate=pre_truncate,
+                                 do_filter=do_length_filter)
+            model_outputs.append(mp)
+
+        print(len(model_outputs))
+        # can use to verify there is an output for all inputs
+        # for i in range(28476):
+        #     if i not in idx_set:
+        #         print(i)
+
+        return model_outputs
+    if label is None:
+        label = fname
+    data = load_t5(fname + '.json',
+                   pre_truncate=pre_truncate)
+    all_aggregate(data, label=label, filter_fcn=filter_fcn)

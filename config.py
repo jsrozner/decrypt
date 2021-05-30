@@ -42,7 +42,10 @@ class DataDirs:
         k_xd_cw = k_dir / "data/original/xd/clues.tsv"
         k_US_dic = k_dir / "data/original/us/US.dic"
         k_chen_wiki = k_dir / "data/original/chenwiki/chen_wiki.txt"
-        #
+
+        # copied from deits directory
+        k_deits_anagram_list = k_dir / "data/original/deits_anag_indic/ana_"
+
         # k_names = k_dir / "cryptic-code/data/original/names/"
 
     # our generated files that are not model inputs
@@ -60,11 +63,22 @@ class DataDirs:
         _base = k_dir / "data/clue_json/"
 
         # guardian
-        _guardian_base_dir = k_dir / "data/clue_json/guardian"
+        _guardian_base_dir = _base / "guardian"
         guardian_naive_random_split = _guardian_base_dir / "naive_random"
         guardian_naive_disjoint_split = _guardian_base_dir / "naive_disjoint"
         guardian_word_init_disjoint_split = _guardian_base_dir / "word_init_disjoint"
 
+        ####
         # curricular
-        xd_cw_json = _base / "ACW_data"
-        anag_dict_lists = _base / "anag_dict_lists"    # json of words mapping to common set of letters
+        _curricular = _base / "curricular"
+
+        # ACW
+        _ACW_sub_dir = "ACW_data"
+        xd_cw_json = _curricular / _ACW_sub_dir
+
+        # anagramming
+        _anag_sub_dir = "anagram"
+        anag_dir = _curricular / _anag_sub_dir  # anagrams (train.json) and anag_indics
+        anag_indics = anag_dir / "anag_indics.json"
+        ####
+

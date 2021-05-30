@@ -1,10 +1,19 @@
 import common_seq.collate_fns as cfns
 from common_seq import util_metrics
 from common_seq.util_multiloader import MultitaskConfig, TaskConfig
+# import sys
+# sys.path.append('../../decrypt_root')       # decrypt_root to enable config import
+# import decrypt_root.config as config
 
-# should match config.py in top level directory
+# relative import issues with config
 k_curr_dir = "../data/clue_json/curricular"
-k_cryptonite_dir = ""
+# k_curr_dir = config.DataDirs.DataExport._curricular
+# subdirectories within k_curr_dir with the content
+# k_task_dir = config.DataDirs.DataExport._ACW_sub_dir
+k_task_dir = "ACW_data"
+# k_anag_task_dir = config.DataDirs.DataExport.anag_dir   # has train.json
+k_anag_task_dir = "anagram"
+k_anag_indic_file = f'{k_curr_dir}/{k_anag_task_dir}/anag_indics.json'
 
 k_default_args = dict(
     multitask_dir=k_curr_dir,
@@ -14,37 +23,35 @@ k_default_args = dict(
 
 # american crossword (with label)
 task_ACW = TaskConfig(
-    dir="ACW",        # 2.4m
+    dir=k_task_dir,        # 2.4m
     name="acw",
     val_fcn_list=[util_metrics.compute_metrics_sampled_primary],
     # adds a label, like 'phrase: <input>'
     collate_fn=cfns.collate_fn_from_pretokenize(cfns.make_pretokenize_prepend_label('phrase'))
 )
 task_ACW_descramble = TaskConfig(
-    dir="ACW",        # 2.4m
+    dir=k_task_dir,        # 2.4m
     name="acw_descramble",
     val_fcn_list=[util_metrics.compute_metrics_sampled_primary],
     collate_fn = cfns.collate_fn_from_pretokenize(cfns.make_pretokenize_descramble(label='descramble'))
 )
 task_ACW_descramble_word = TaskConfig(
-    dir="ACW",        # 2.4m
+    dir=k_task_dir,        # 2.4m
     name="acw_descramble_word",
     val_fcn_list=[util_metrics.compute_metrics_sampled],
     # add a label and descramble (will lowercase the first letter of the clue)
     collate_fn = cfns.collate_fn_from_pretokenize(
         cfns.make_pretokenize_descramble(label='descramble word', word_only=True))
 )
-
-# todo: directory and anag_indic_file
-# task_anagram = TaskConfig(
-#     dir="_anag2/anag_dict_lists",
-#     name="anag_with_indic",
-#     val_fcn_list=[util_metrics.compute_metrics_sampled],
-#     # add a label and descramble (will lowercase the first letter of the clue)
-#     collate_fn = cfns.collate_fn_from_pretokenize(
-#         cfns.make_pretokenize_anagram(label='anagram',
-#                                       anag_indic_file='../data_export/json/_anag2/anag_dict_lists/indic_list.json'))
-# )
+task_anagram = TaskConfig(
+    dir= k_anag_task_dir,
+    name="anag_with_indic",
+    val_fcn_list=[util_metrics.compute_metrics_sampled],
+    # add a label and descramble (will lowercase the first letter of the clue)
+    collate_fn = cfns.collate_fn_from_pretokenize(
+        cfns.make_pretokenize_anagram(label='anagram',
+                                      anag_indic_file=k_anag_indic_file))
+)
 
 
 multi_config = dict(
@@ -82,30 +89,36 @@ multi_config = dict(
         **k_default_args
     ),
 
-    # # ACW + anagram
-    # ACW__anagram = MultitaskConfig(
-    #     freq_list=[20, 3, 3],
-    #     num_warmup=2,
-    #     tasks=[task_ACW, task_anagram],
-    #     **k_default_args
-    # ),
-    #
-    # # ACW + ACW-descramble + anagram
-    # # has 7:6 ratio of pretraining batches (i.e. more)
-    # ACW__ACW_descramble__anagram = MultitaskConfig(
-    #     freq_list=[20, 3, 3, 1],
-    #     num_warmup=2,
-    #     tasks=[task_ACW, task_ACW_descramble, task_anagram],
-    #     **k_default_args
-    # ),
-
-    # Cryptonite - best multitask approach (ACW + ACW-descramble)
-    # reduces num_warmup
-    cfg_crypto_acw_acwdesc = MultitaskConfig(
+    # ACW + anagram
+    ACW__anagram = MultitaskConfig(
         freq_list=[20, 3, 3],
-        num_warmup=3,           # one fewer than above
+        num_warmup=2,
+        tasks=[task_ACW, task_anagram],
+        **k_default_args
+    ),
+
+    # ACW + ACW-descramble + anagram
+    # has 7:6 ratio of pretraining batches (i.e. more)
+    ACW__ACW_descramble__anagram = MultitaskConfig(
+        freq_list=[20, 3, 3, 1],
+        num_warmup=2,
+        tasks=[task_ACW, task_ACW_descramble, task_anagram],
+        **k_default_args
+    ),
+
+    final_top_result_scaled_up = MultitaskConfig(
+        freq_list=[20, 3, 3],
+        num_warmup=4,           # scale up for the top performing
         tasks=[task_ACW, task_ACW_descramble],
         **k_default_args
     ),
 
+    # Cryptonite - best multitask approach (ACW + ACW-descramble)
+    # has an extra epoch of warmup
+    cfg_crypto_acw_acwdesc = MultitaskConfig(
+        freq_list=[20, 3, 3],
+        num_warmup=3,           # one more than above
+        tasks=[task_ACW, task_ACW_descramble],
+        **k_default_args
+    ),
 )

@@ -8,8 +8,8 @@ from pathlib import Path
 
 from torch.utils.data import DataLoader, Dataset
 
-from common_seq.types import *
-from common_seq.util_dataloader import DatasetConfig, DataLoaderConfig
+from .types import *
+from .util_dataloader import DatasetConfig, DataLoaderConfig
 
 log = logging.getLogger(__name__)
 

@@ -1,8 +1,8 @@
 import logging
 import random
 
-from common_seq.types import *
-from common_seq.util_dataloader_batch import default_collate_fn_json
+from .types import *
+from .util_dataloader_batch import default_collate_fn_json
 
 log = logging.getLogger(__name__)
 
