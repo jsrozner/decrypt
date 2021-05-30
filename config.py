@@ -41,7 +41,7 @@ class DataDirs:
     class OriginalData:
         k_xd_cw = k_dir / "data/original/xd/clues.tsv"
         k_US_dic = k_dir / "data/original/us/US.dic"
-        # k_chen_wiki = k_dir / "data/original/chen_wiki.txt"
+        k_chen_wiki = k_dir / "data/original/chenwiki/chen_wiki.txt"
         #
         # k_names = k_dir / "cryptic-code/data/original/names/"
 
@@ -53,11 +53,18 @@ class DataDirs:
         # https://github.com/fogleman/TWL06 (no license)
         twl_tex_dict = k_dir / "data/generated/twl_dict.txt"
 
+        # anagrams
+        anagram_db = k_dir / "data/generated/anag_db"
+
     class DataExport:
         _base = k_dir / "data/clue_json/"
-        xd_cw_json = _base / "ACW_data"     # curricular
 
+        # guardian
         _guardian_base_dir = k_dir / "data/clue_json/guardian"
         guardian_naive_random_split = _guardian_base_dir / "naive_random"
         guardian_naive_disjoint_split = _guardian_base_dir / "naive_disjoint"
         guardian_word_init_disjoint_split = _guardian_base_dir / "word_init_disjoint"
+
+        # curricular
+        xd_cw_json = _base / "ACW_data"
+        anag_dict_lists = _base / "anag_dict_lists"    # json of words mapping to common set of letters

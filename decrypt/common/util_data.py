@@ -7,8 +7,10 @@ Utils to
 import json
 import logging
 import os.path
+from collections import defaultdict
 from pprint import pformat
 from typing import *
+import config
 
 from tqdm import tqdm
 
@@ -16,6 +18,7 @@ from decrypt.common.puzzle_clue import (
     Seq2seqDataEntry,
     BaseClue
 )
+from .anagrammer import Anagrammer
 
 log = logging.getLogger(__name__)
 
@@ -89,3 +92,36 @@ def clue_list_tuple_to_train_split_json(
              f'\t{out_ex["input"]} => {out_ex["target"]}\n')
 
     write_json_tuple(json_output_tuple, comment, export_dir, overwrite=overwrite, mod_fn=mod_fn)
+
+###
+# Anagrams
+###
+
+def get_anags(max_num_words=1) -> List[List[str]]:
+    """
+    Return List where each element is a list of words that map to the same set of letters
+    """
+    anag = Anagrammer(str(config.DataDirs.Generated.anagram_db))   # system autoappends db
+    # First populate the anagrams
+    anag._populate_possible_anagrams()
+
+    ret_anags = []
+    for anag_set in anag._possible_anagrams:
+        one_word_anags, multi_word_anags = anag_set.get_lists()     # get one words only
+        all_anags = one_word_anags + multi_word_anags
+        if max_num_words > 0:
+            # list of lists; num lists is the number of words in the anag set
+            all_anags = filter(lambda x: len(x) <= max_num_words, all_anags)
+
+        # for multi-word anags, we join them together
+        all_anags = list(map(lambda x: " ".join(x), all_anags))
+        if len(all_anags) > 1:      # make sure there are at least two realizations of the letter set
+            # flattened = [w for realizations in all_anags for w in realizations]       # flatten
+            ret_anags.append(all_anags)
+
+    print(len(ret_anags))          # unique sets of letters that produce more than one realized anagram
+    print(len(anag._possible_anagrams)) # unique sets of letters that produce a single or multiword anagram
+    print(sum(map(lambda x: len(x), ret_anags)))       # all possible words that have at least one other one word anag
+    print(ret_anags[0])            # example
+
+    return ret_anags
