@@ -82,3 +82,8 @@ class DataDirs:
         anag_indics = anag_dir / "anag_indics.json"
         ####
 
+        # descrambling
+        _descramble_dir = _base / "descramble"
+        descramble_random = _descramble_dir / "random_split.json"
+        descramble_word_init_disjoint = _descramble_dir / "word_initial.json"
+

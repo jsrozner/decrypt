@@ -347,13 +347,9 @@ def load_guardian_splits_disjoint(json_dir, seed=42, verify=True) -> SplitReturn
     return soln_to_clue_map, all_clues, all_clues_tuple
 
 
-def load_guardian_splits_disjoint_hash(json_dir: str, seed=42, verify=True) -> SplitReturn:
-    """
-    Produce a disjoint split based on hashing the first two letters
-    :return: SplitReturn (see this file)
-    """
-    soln_to_clue_map, all_clues = get_clean_clues(json_dir, verify=verify)
-
+def make_disjoint_split(all_clues: List[BaseClue],
+                        seed=42) -> Tuple[List[BaseClue], ...]:
+    soln_to_clue_map = make_stc_map(all_clues)
     train, val, test = [], [], []
     for k, v in soln_to_clue_map.items():
         h = int(safe_hash(k[:2]), 16) % 5  # normal hash function is not deterministic across python runs
@@ -365,11 +361,20 @@ def load_guardian_splits_disjoint_hash(json_dir: str, seed=42, verify=True) -> S
             test.extend(v)
 
     out_tuple = train, val, test
-
     rng = random.Random(seed)
     for l in out_tuple:
         rng.shuffle(l)
-
     check_splits(all_clues, out_tuple)
+
+    return out_tuple
+
+
+def load_guardian_splits_disjoint_hash(json_dir: str, seed=42, verify=True) -> SplitReturn:
+    """
+    Produce a disjoint split based on hashing the first two letters
+    :return: SplitReturn (see this file)
+    """
+    soln_to_clue_map, all_clues = get_clean_clues(json_dir, verify=verify)
+    out_tuple = make_disjoint_split(all_clues, seed)
 
     return soln_to_clue_map, all_clues, out_tuple
