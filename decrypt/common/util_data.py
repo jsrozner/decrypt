@@ -45,6 +45,7 @@ def write_json_tuple(json_tuple: List[List],
         with open(path, 'w') as fh:
             json.dump(json_dict, fh)
 
+    os.makedirs(export_dir, exist_ok=True)
     for json_out, filename in zip(json_tuple, k_data_names):
         tgt_path = os.path.join(export_dir, filename + ".json")
         write_json_to_file(json_out, tgt_path)

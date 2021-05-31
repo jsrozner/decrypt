@@ -8,14 +8,6 @@ from pathlib import Path
 # parse root directory
 k_dir = Path(os.path.abspath(__file__)).parent
 
-# class FileLocs:
-    # k_wiki_abbrev = k_dir + "cryptic-code/" + "data/generated/wiki_abbrev.txt"
-    # k_anag_dict = path.curdir + "/data/anagrams"         # system will auto-append db
-
-    # class Indicators:
-    #     k_homophone_indics = k_dir + "cryptic-code/data/indicators/homophone.txt"
-    #     k_hidden_indics = k_dir + "cryptic-code/data/indicators/hidden.txt"
-
 
 # data dirs
 class DataDirs:
@@ -32,12 +24,6 @@ class DataDirs:
     class Guardian:
         json_folder = k_dir / "data/puzzles/"
 
-
-    # class Export:
-    #     main = k_dir + "cryptic-data/data_export (sym)/"
-    #
-    # class ClusterRuns:
-    #     main = k_dir + "cryptic-data/cluster_save/"
     class OriginalData:
         k_xd_cw = k_dir / "data/original/xd/clues.tsv"
         k_US_dic = k_dir / "data/original/us/US.dic"
@@ -46,7 +32,7 @@ class DataDirs:
         # copied from deits directory
         k_deits_anagram_list = k_dir / "data/original/deits_anag_indic/ana_"
 
-        # k_names = k_dir / "cryptic-code/data/original/names/"
+        k_names = k_dir / "data/original/names/"
 
     # our generated files that are not model inputs
     class Generated:
@@ -84,6 +70,10 @@ class DataDirs:
 
         # descrambling
         _descramble_dir = _base / "descramble"
-        descramble_random = _descramble_dir / "random_split.json"
-        descramble_word_init_disjoint = _descramble_dir / "word_initial.json"
+        descramble_random = _descramble_dir / "random_split"
+        descramble_word_init_disjoint = _descramble_dir / "word_initial"
+
+        # 6.4 wordplay
+        wordplay_dir = _base / "wordplay"
+
 
