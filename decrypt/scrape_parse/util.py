@@ -18,9 +18,13 @@ def _gen_filename(base_dir: str, subsite: str, ext: str, idx: int = None, return
         filename += str(idx) + ext
     return filename
 
-
+# normal hash function is not deterministic across python runs
 def hash(input: str):
     hash_obj = hashlib.md5(input.encode())
     return hash_obj.hexdigest()
+
+def str_hash(input: str) -> int:
+    hex_hash = hash(input)
+    return int(hex_hash, 16)
 
 

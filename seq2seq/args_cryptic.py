@@ -191,7 +191,7 @@ def get_args(extra_args_fn=None):
         f'Cannot do both default_train and default_val simultaneously'
     if args.default_train is not None:
         if args.default_train == 'base':
-            args.project = "cryptics_train"
+            # args.project = "cryptics_train"
             # ada_constant is False (i.e. we use relative step)
             args.generation_beams = 5
             args.batch_size = 256       # alternatively can do 128 and accum_steps=2
@@ -200,14 +200,14 @@ def get_args(extra_args_fn=None):
             # default model is t5-base
 
         elif args.default_train == 'cryptonite':
-            args.project = "cryptonite"
+            # args.project = "cryptonite"
             args.ada_constant = True
             args.generation_beams = 5
             args.batch_size = 64
             args.grad_accum_steps = 12
             args.num_epochs = 15            # for the naive split, can train to 20 epochs
             args.model_name = 't5-large'
-            args.val_freq = 100
+            # args.val_freq = 100       # set to 100 for the disjoint set
         else:
             raise NotImplemented
 
@@ -221,13 +221,13 @@ def get_args(extra_args_fn=None):
         args.do_save = False    # no checkpointing
 
         if args.default_val == 'base':
-            args.project = "cryptics_val"
+            # args.project = "cryptics_val"
             args.generation_beams = 100
             args.batch_size = 16            # can change this depending on your GPU; doesn't affect results
             # default model is t5-base
         elif args.default_val == 'cryptonite':
             # default for cryptonite eval
-            args.project = "cryptonite"
+            # args.project = "cryptonite"
             args.generation_beams = 5       # cryptonite originally used only 5 beams, copy their implementation
             args.batch_size = 64            # can change depending on GPU; doesn't affect val resulst
             args.model_name = 't5-large'

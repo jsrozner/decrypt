@@ -13,7 +13,7 @@ from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
 from decrypt.common.puzzle_clue import BaseClue, GuardianClue, filter_clues, make_stc_map
-from .util import _gen_filename, hash as safe_hash
+from .util import _gen_filename, str_hash as safe_hash
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
@@ -352,7 +352,7 @@ def make_disjoint_split(all_clues: List[BaseClue],
     soln_to_clue_map = make_stc_map(all_clues)
     train, val, test = [], [], []
     for k, v in soln_to_clue_map.items():
-        h = int(safe_hash(k[:2]), 16) % 5  # normal hash function is not deterministic across python runs
+        h = safe_hash(k[:2]) % 5  # normal hash function is not deterministic across python runs
         if h < 3:
             train.extend(v)
         elif h < 4:

@@ -11,10 +11,6 @@ k_dir = Path(os.path.abspath(__file__)).parent
 
 # data dirs
 class DataDirs:
-    # class Cryptonite:
-    #     main = k_dir + "cryptic-supp/cryptonite-main/data/"
-    #     official_split = main + "cryptonite-official-split/"        # cryponite-[test|train|val].jsonl
-    #     naive_split = main + "cryptonite-naive-split/"
 
     class Deits:
         k_deits_main = k_dir / 'deits'
@@ -33,6 +29,12 @@ class DataDirs:
         k_deits_anagram_list = k_dir / "data/original/deits_anag_indic/ana_"
 
         k_names = k_dir / "data/original/names/"
+
+        # cryptonite
+        _cryptonite_original_data_dir = k_dir / "data/original/cryptonite"
+        k_cryptonite_offical = _cryptonite_original_data_dir / "cryptonite-official-split"
+        k_cryptonite_naive = _cryptonite_original_data_dir / "cryptonite-naive-split"
+
 
     # our generated files that are not model inputs
     class Generated:
@@ -75,5 +77,13 @@ class DataDirs:
 
         # 6.4 wordplay
         wordplay_dir = _base / "wordplay"
+
+        # 6.5 cryptonite
+        _crypto_dir = _base / "cryptonite"
+        crypto_naive = _crypto_dir / "naive"
+        crypto_naive_disjoint = _crypto_dir / "official_theirs"
+        crypto_word_init_disjoint = _crypto_dir / "word_init_disjoint"
+
+
 
 
