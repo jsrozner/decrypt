@@ -196,7 +196,7 @@ def get_args(extra_args_fn=None):
             args.generation_beams = 5
             args.batch_size = 256       # alternatively can do 128 and accum_steps=2
             # grad_accum_steps = 1
-            args.num_epochs = 15
+            # args.num_epochs = 15
             # default model is t5-base
 
         elif args.default_train == 'cryptonite':
@@ -205,7 +205,7 @@ def get_args(extra_args_fn=None):
             args.generation_beams = 5
             args.batch_size = 64
             args.grad_accum_steps = 12
-            args.num_epochs = 15            # for the naive split, can train to 20 epochs
+            # args.num_epochs = 15            # for the naive split, can train to 20 epochs
             args.model_name = 't5-large'
             # args.val_freq = 100       # set to 100 for the disjoint set
         else:
