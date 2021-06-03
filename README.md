@@ -10,10 +10,8 @@ Puzzles as a Target for NLP](https://arxiv.org/abs/2104.08620).
 
 ## Requirements
 
-This will enable you to download and replicate the datasplits, but I have not yet
-added the requirements to replicate the rest of the paper (baselines and experiments sections).
-For now you'll just need to try to run and pip install a few packages as you go.
-(todo)
+This will enable you to download and replicate the datasplits, but it has not been updated
+to include all requirements to run the (baselines and experiments notebooks).
 ```setup
 pip install -r requirements.txt
 ```
@@ -23,7 +21,7 @@ pip install -r requirements.txt
 git clone git@github.com:jsrozner/decrypt.git
 cd decrypt
 mkdir -p './data/puzzles'
-python guardian_scrape.py --save_directory="./puzzles"
+python guardian_scrape.py --save_directory="./data/puzzles"
 ```
 
 # Reproducing our splits
