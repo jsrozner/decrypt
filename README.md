@@ -18,7 +18,7 @@ pip install -r requirements.txt
 
 ## Download data
 ```setup
-git clone git@github.com:jsrozner/decrypt.git
+git clone <anonymized>  # for code supplement, just unzip
 cd decrypt
 mkdir -p './data/puzzles'
 python guardian_scrape.py --save_directory="./data/puzzles"
