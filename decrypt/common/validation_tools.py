@@ -27,7 +27,8 @@ class DummyWriter:
 
 
 try:
-    # TODO: this needs to be setup to get automatic output writing
+    # TODO: this needs to be setup to get automatic output writing to google sheets
+    # not currently included in the public decrypt repo
     from common.gsheets import Writer
     _vt_writer = Writer()
 except:

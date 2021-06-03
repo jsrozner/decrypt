@@ -6,7 +6,7 @@ from pathlib import Path
 #####
 
 # parse root directory
-k_dir = Path(os.path.abspath(__file__)).parent
+k_dir = Path(os.path.abspath(__file__)).parent.parent
 
 
 # data dirs
@@ -23,7 +23,6 @@ class DataDirs:
     class OriginalData:
         k_xd_cw = k_dir / "data/original/xd/clues.tsv"
         k_US_dic = k_dir / "data/original/us/US.dic"
-        k_chen_wiki = k_dir / "data/original/chenwiki/chen_wiki.txt"
 
         # copied from deits directory
         k_deits_anagram_list = k_dir / "data/original/deits_anag_indic/ana_"

@@ -4,7 +4,7 @@ from typing import *
 
 from tqdm import tqdm
 
-import config
+import decrypt.config as config
 from decrypt.scrape_parse.guardian_load import load_guardian_splits
 
 

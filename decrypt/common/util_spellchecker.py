@@ -7,7 +7,7 @@ from typing import *
 import enchant
 from tqdm import tqdm
 
-import config
+import decrypt.config as config
 
 logging.getLogger(__name__)
 
@@ -41,28 +41,6 @@ def line_parser_US_dic(input_line: bytes, log_errors=False) -> Optional[List[str
     except UnicodeDecodeError:
         if log_errors:
             print(f"unicode decode fail: {repr(input_line)}")
-        return None
-
-def line_parser_chenwiki(input_line: str,
-                         spell_chkr: SpellChecker,
-                         spell_check_single_words: bool = True) -> Optional[List[str]]:
-    """
-    For use with data/chenwiki.txt
-    """
-    try:
-        input_word = input_line.split(";")[0].lower()
-        split_word_list = spell_chkr.split_mixed_word(input_word)
-        if split_word_list:
-            return split_word_list
-
-        # if we do spellchecking, then verify that it is a valid word before returning
-        if spell_check_single_words and not spell_chkr.check_word(input_word, special_handle_short_words=True):
-            return None
-
-        # otherwise we can always return the input word by itself
-        return [input_word]
-
-    except IndexError:
         return None
 
 # todo: enchant is no longer maintained and double checking is inefficient

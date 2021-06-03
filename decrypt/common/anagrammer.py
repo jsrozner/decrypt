@@ -21,17 +21,15 @@ from typing import *
 
 from tqdm import tqdm
 
-import config
+import decrypt.config as config
 from .util_spellchecker import (
     line_parser_US_dic,
-    line_parser_chenwiki,
     SpellChecker,
     get_shelve_dbhandler_open_flag
 )
 
 logging.getLogger(__name__)
 
-k_default_chenwiki_input_file_name = str(config.DataDirs.OriginalData.k_chen_wiki)
 k_default_base_input_file_name = str(config.DataDirs.OriginalData.k_US_dic)
 k_default_output_file_name = str(config.DataDirs.Generated.anagram_db)
 
@@ -262,11 +260,6 @@ def gen_db_with_both_inputs(output_filename=k_default_output_file_name,
         print(f'Done.')
 
 
-    # set up line parser function
-    spell_chkr = SpellChecker()
-    def line_parser_fcn_with_spellchkr(input_line: str):
-        return line_parser_chenwiki(input_line, spell_chkr)
-
     # verify the db flags
     dbhandler_flag = get_shelve_dbhandler_open_flag(output_filename, update_flag=update_flag)
     if not dbhandler_flag:
@@ -274,8 +267,6 @@ def gen_db_with_both_inputs(output_filename=k_default_output_file_name,
 
     logging.info(f"Adding to db {output_filename} with updateflag {update_flag}")
     with shelve.open(output_filename, flag=dbhandler_flag) as db:
-        with open(k_default_chenwiki_input_file_name, "r") as fh:
-            add_file_to_database(fh, db, line_parser_fcn=line_parser_fcn_with_spellchkr)
         with open(k_default_base_input_file_name, "rb") as fh:
             add_file_to_database(fh, db, line_parser_fcn=line_parser_US_dic)
 
