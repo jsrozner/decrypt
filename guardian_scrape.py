@@ -21,7 +21,7 @@ import urllib3
 from bs4 import BeautifulSoup
 from tqdm import tqdm
 
-from decrypt.util import _gen_filename
+from decrypt.scrape_parse.util import _gen_filename
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)

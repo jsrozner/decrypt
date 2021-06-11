@@ -12,8 +12,8 @@ from typing import List, Tuple, Dict
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
-from .puzzle_clue import BaseClue, GuardianClue, filter_clues, make_stc_map
-from .util import _gen_filename, hash as safe_hash
+from decrypt.common.puzzle_clue import BaseClue, GuardianClue, filter_clues, make_stc_map
+from .util import _gen_filename, str_hash as safe_hash
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
@@ -132,7 +132,7 @@ def clean_and_add_clues_from_guardian_json_puzzle_to_dict(path: str,
         ]
         # not_allowed
         # '<',    # invalid html
-        # '†'     # marks a puzzle annotation (additional info)
+        # '†'     # marks a puzzle annotation (i.e. provides additional info)
 
         # make sure clue contains only alpha or allowed chars
         if not clue_text.isalpha():
@@ -347,13 +347,9 @@ def load_guardian_splits_disjoint(json_dir, seed=42, verify=True) -> SplitReturn
     return soln_to_clue_map, all_clues, all_clues_tuple
 
 
-def load_guardian_splits_disjoint_hash(json_dir: str, seed=42, verify=True) -> SplitReturn:
-    """
-    Produce a disjoint split based on hashing the first two letters
-    :return: SplitReturn (see this file)
-    """
-    soln_to_clue_map, all_clues = get_clean_clues(json_dir, verify=verify)
-
+def make_disjoint_split(all_clues: List[BaseClue],
+                        seed=42) -> Tuple[List[BaseClue], ...]:
+    soln_to_clue_map = make_stc_map(all_clues)
     train, val, test = [], [], []
     for k, v in soln_to_clue_map.items():
         h = safe_hash(k[:2]) % 5  # normal hash function is not deterministic across python runs
@@ -365,11 +361,20 @@ def load_guardian_splits_disjoint_hash(json_dir: str, seed=42, verify=True) -> S
             test.extend(v)
 
     out_tuple = train, val, test
-
     rng = random.Random(seed)
     for l in out_tuple:
         rng.shuffle(l)
-
     check_splits(all_clues, out_tuple)
+
+    return out_tuple
+
+
+def load_guardian_splits_disjoint_hash(json_dir: str, seed=42, verify=True) -> SplitReturn:
+    """
+    Produce a disjoint split based on hashing the first two letters
+    :return: SplitReturn (see this file)
+    """
+    soln_to_clue_map, all_clues = get_clean_clues(json_dir, verify=verify)
+    out_tuple = make_disjoint_split(all_clues, seed)
 
     return soln_to_clue_map, all_clues, out_tuple
