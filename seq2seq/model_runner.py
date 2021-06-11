@@ -1,14 +1,12 @@
 
 from transformers import T5ForConditionalGeneration, T5TokenizerFast
-import seq2seq.common.util as util
+import seq2seq.common_seq.util as util
 import numpy as np
 from typing import *
 import logging
 
-from seq2seq.common.util_checkpoint import load_ckpt
+from seq2seq.common_seq.util_checkpoint import load_ckpt
 
-# k_model_name = 't5-small'
-# k_path = '/Users/jsrozner/jsrozner/cryptic/cryptic-data/cluster_save/t5-small-json-128b-run-20210318_133500-3gxvrh70/epoch_13.pth.tar'
 
 class ModelRunner:
     def __init__(self, model_name, ckpt_path,
