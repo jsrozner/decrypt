@@ -321,17 +321,30 @@ def write_row(label: str, ctr: Dict):
 
 def all_aggregate(mp_set: List[ModelPrediction],
                   label="empty",
-                  filter_fcn: Optional[Callable[[ModelPrediction],bool]] = None,):
-                  # do_multi_split=False):
-    def multiword_filter(mp: ModelPrediction):
-        if ' ' in mp.target:
+                  filter_fcn: Optional[Callable[[ModelPrediction],bool]] = None,
+                  do_multi_split=False):
+    def multiword_filter(mp: ModelPrediction,
+                         answer_type: str = 'single'):
+        assert answer_type in ['single', 'all']
+        if answer_type == 'single' and ' ' not in mp.target:
+            return True
+        if answer_type == 'all' and ' ' in mp.target:
             return True
         return False
+        # if ' ' in mp.target:
+        #     return True
+        # return False
+    # create a single and multi filter
+    def filter_single(mp: ModelPrediction):
+        return multiword_filter(mp, 'single')
+    def filter_multi(mp: ModelPrediction):
+        return multiword_filter(mp, 'all')
 
     c = aggregate(mp_set, filter_fcn=filter_fcn)
-    write_row(label, c)
-    # if do_multi_split:
-    #     aggregate(mp_set, filter_fcn=multiword_filter)
+    # write_row(label, c)
+    if do_multi_split:
+        aggregate(mp_set, filter_fcn=filter_single)
+        aggregate(mp_set, filter_fcn=filter_multi)
 
 ###
 # set inclusion filter functions
@@ -436,6 +449,8 @@ def load_deits(val_set: Union[List[GuardianClue], List[str]],
 
 def load_and_run_t5(fname, label=None, filter_fcn=None, pre_truncate=None,
                     do_length_filter=True):
+    assert filter_fcn is None
+
     def load_t5(json_out_file: str, pre_truncate=None):
         with open(json_out_file, 'r') as f:
             json_blob = json.load(f)
@@ -464,4 +479,4 @@ def load_and_run_t5(fname, label=None, filter_fcn=None, pre_truncate=None,
         label = fname
     data = load_t5(fname + '.json',
                    pre_truncate=pre_truncate)
-    all_aggregate(data, label=label, filter_fcn=filter_fcn)
+    all_aggregate(data, label=label, filter_fcn=filter_fcn, do_multi_split=True)
