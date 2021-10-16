@@ -16,13 +16,23 @@ to include all requirements to run the (baselines and experiments notebooks).
 pip install -r requirements.txt
 ```
 
-## Download data
+## Preparing data
 ```setup
-git clone <anonymized>  # for code supplement, just unzip
+git clone <anonymized>  # if using code supplement, just unzip
+cd decrypt
+unzip './data/guardian_2020_10_08.json.zip'
+```
+
+### Download data (can safely be ignored)
+If you want to download the data yourself from the web (you probably don't want to)
+```setup
+git clone <anonymized>  # if using code supplement, just unzip
 cd decrypt
 mkdir -p './data/puzzles'
-python guardian_scrape.py --save_directory="./data/puzzles"
+python decrypt/scrape_parse/guardian_scrape.py --save_directory="./data/puzzles"
 ```
+Then when you run `load_guardian_splits` you will run `load_guardian_splits("./data/puzzles", load_from_files=True)`
+
 
 # Reproducing our splits
 ```python
@@ -51,7 +61,7 @@ Alternatively, if you don't care, you can pass `verify=False` to
 `load_guardian_splits`
 """
 
-soln_to_clue_map, all_clues_list, (train, val, test) = load_guardian_splits("./puzzles")
+soln_to_clue_map, all_clues_list, (train, val, test) = load_guardian_splits("./data/")
 ```
 
 ## Replicating our work
@@ -86,7 +96,7 @@ See `experiments/model_analysis`
 Note that details of training and evaluating the models are available in the relevant jupyter
 notebooks.
 
-[comment]: <> TODO  (## Pre-trained Models)
+[comment]: <> ([comment]: <> TODO  &#40;## Pre-trained Models&#41;)
 
 [comment]: <> (You can download pretrained models here:)
 

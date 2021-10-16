@@ -12,7 +12,10 @@ from typing import List, Tuple, Dict
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
-from decrypt.common.puzzle_clue import BaseClue, GuardianClue, filter_clues, make_stc_map
+from decrypt.common.puzzle_clue import (
+    BaseClue, GuardianClue, CleanGuardianClue,
+    filter_clues, make_stc_map
+)
 from .util import _gen_filename, str_hash as safe_hash
 
 logging.basicConfig(level=logging.INFO)
@@ -23,11 +26,14 @@ k_expected_puz_count = 5518
 k_expected_clue_ct = 142380
 k_5111_clue_text = 'Great issue, relatively speaking'
 
+# handles typing for the class (constructor)
+TGuardClue = TypeVar("TGuardClue", bound=GuardianClue)
 
 # todo: some clues seem not to be stripped? (i.e. trailing space)
 def clean_and_add_clues_from_guardian_json_puzzle_to_dict(path: str,
                                                           puzzle_dict: Dict[str, List[GuardianClue]],
                                                           ctr: Counter,
+                                                          clue_cls: Type[TGuardClue],
                                                           skip_if_in_dict: bool = True):
     """
     Parses puzzle from path (json)
@@ -196,7 +202,7 @@ def clean_and_add_clues_from_guardian_json_puzzle_to_dict(path: str,
             continue
 
         unique_clue_id = f'{cw_type}_{number}_{clue_id}'
-        new_clue = GuardianClue(unique_clue_id=unique_clue_id,
+        new_clue = clue_cls(unique_clue_id=unique_clue_id,
                                 type=cw_type,
                                 number=number,
                                 id=puz_id,
@@ -221,6 +227,7 @@ def clean_and_add_clues_from_guardian_json_puzzle_to_dict(path: str,
 # Methods to load in the json
 ####
 def all_json_files_to_json_list(json_files_dir, subsite, puzzle_dict: Dict,
+                                clue_cls: Type[TGuardClue],
                                 skip_if_in_dict: bool = True,
                                 verify=True) -> List[GuardianClue]:
     clue_list: List[GuardianClue] = []
@@ -241,26 +248,35 @@ def all_json_files_to_json_list(json_files_dir, subsite, puzzle_dict: Dict,
 
     for f in tqdm(sorted(file_glob)):
         new_clues = clean_and_add_clues_from_guardian_json_puzzle_to_dict(f, puzzle_dict, ctr,
-                                                                          skip_if_in_dict=skip_if_in_dict)
+                                                                          skip_if_in_dict=skip_if_in_dict,
+                                                                          clue_cls=clue_cls)
         clue_list.extend(new_clues)
     pp(sorted(ctr.items(), key=lambda x: str(x)))
     print(f'Total clues: len(puzz_list)')
     return clue_list
 
 
-def get_clean_clues(json_output_dir,
+# runs over actual json files; don't use if using the distributed clue set
+def orig_get_clean_clues(json_output_dir,
                     do_filter_dupes=True,
-                    verify=True
+                    verify=True,
+                    strip_identifying_info=False,
                     ) -> Tuple[Dict[str, List[BaseClue]], List[BaseClue]]:
     log.info(f'loading from {json_output_dir}')
     parsed_puzzles: Dict[str, List[GuardianClue]] = defaultdict(None)  # map from puz_id => List[GuardianClue]
 
     # load full glob
+    if strip_identifying_info:
+        clue_cls = CleanGuardianClue
+    else:
+        clue_cls = GuardianClue
     all_clue_list = all_json_files_to_json_list(json_output_dir,
                                                 subsite="cryptic",
                                                 puzzle_dict=parsed_puzzles,
                                                 skip_if_in_dict=True,
-                                                verify=verify)
+                                                verify=verify,
+                                                clue_cls=clue_cls)
+
 
     soln_to_clue_map = make_stc_map(all_clue_list)
 
@@ -269,10 +285,27 @@ def get_clean_clues(json_output_dir,
     if do_filter_dupes:
         soln_to_clue_map, all_clue_list = filter_clues(soln_to_clue_map)
 
+    return soln_to_clue_map, all_clue_list
+
+
+def get_clean_clues(json_file_or_json_dir,
+                    load_from_json_files: bool = False,
+                    verify=True,
+                    ) -> Tuple[Dict[str, List[BaseClue]], List[BaseClue]]:
+    if load_from_json_files:
+        soln_to_clue_map, all_clue_list = orig_get_clean_clues(
+            json_file_or_json_dir)
+    else:
+        with open(json_file_or_json_dir, 'r') as f:
+            all_clue_list = json.load(f)
+        all_clue_list = list(map(CleanGuardianClue.from_json, all_clue_list))
+        soln_to_clue_map = make_stc_map(all_clue_list)
+
     # add indices and a note about dataset
     for idx, c in enumerate(all_clue_list):
         c.idx = idx
-        c.dataset = json_output_dir
+        # if not strip_identifying_info:
+        #     c.dataset = json_output_dir
 
     # print the distribution
     ctr = Counter()
@@ -288,6 +321,9 @@ def get_clean_clues(json_output_dir,
         log.info(f'Clue list length matches Decrypting paper expected length')
 
     return soln_to_clue_map, all_clue_list
+
+
+
 
 
 def check_splits(all_clues, input_tuple):
@@ -306,8 +342,8 @@ def check_splits(all_clues, input_tuple):
 SplitReturn = Tuple[Dict[str, List[BaseClue]], List[BaseClue], Tuple[List[BaseClue], ...]]
 
 
-def load_guardian_splits(json_dir, seed=42, verify=True) -> SplitReturn:
-    soln_to_clue_map, all_clues = get_clean_clues(json_dir, verify=verify)
+def load_guardian_splits(json_dir, seed=42, verify=True, load_from_files=False) -> SplitReturn:
+    soln_to_clue_map, all_clues = get_clean_clues(json_dir, verify=verify, load_from_json_files=load_from_files)
     train, test = train_test_split(all_clues, test_size=0.2, random_state=seed)
     train, val = train_test_split(train, test_size=0.25, random_state=seed)
 
@@ -320,8 +356,8 @@ def load_guardian_splits(json_dir, seed=42, verify=True) -> SplitReturn:
     return soln_to_clue_map, all_clues, (train, val, test)
 
 
-def load_guardian_splits_disjoint(json_dir, seed=42, verify=True) -> SplitReturn:
-    soln_to_clue_map, all_clues = get_clean_clues(json_dir, verify=verify)
+def load_guardian_splits_disjoint(json_dir, seed=42, verify=True, load_from_files=False) -> SplitReturn:
+    soln_to_clue_map, all_clues = get_clean_clues(json_dir, verify=verify, load_from_json_files=load_from_files)
 
     splits = [0.2, 0.25]
 
@@ -369,12 +405,12 @@ def make_disjoint_split(all_clues: List[BaseClue],
     return out_tuple
 
 
-def load_guardian_splits_disjoint_hash(json_dir: str, seed=42, verify=True) -> SplitReturn:
+def load_guardian_splits_disjoint_hash(json_dir: str, seed=42, verify=True, load_from_files=False) -> SplitReturn:
     """
     Produce a disjoint split based on hashing the first two letters
     :return: SplitReturn (see this file)
     """
-    soln_to_clue_map, all_clues = get_clean_clues(json_dir, verify=verify)
+    soln_to_clue_map, all_clues = get_clean_clues(json_dir, verify=verify, load_from_json_files=load_from_files)
     out_tuple = make_disjoint_split(all_clues, seed)
 
     return soln_to_clue_map, all_clues, out_tuple
