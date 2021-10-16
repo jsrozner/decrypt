@@ -21,7 +21,8 @@ class DummyWriter:
 
     def write_row(self, Any):
         if not self._did_warn:
-            logging.warning(f'No gsheets writer exists. No rows will be written. '
+            logging.warning(f'(can be safely ignored)'
+                            'No gsheets writer exists. No rows will be written. '
                             f'This warning will be printed only once.')
             self._did_warn = True
 

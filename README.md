@@ -20,7 +20,7 @@ pip install -r requirements.txt
 ```setup
 git clone <anonymized>  # if using code supplement, just unzip
 cd decrypt
-unzip './data/guardian_2020_10_08.json.zip'
+pushd ./data && unzip guardian_2020_10_08.json.zip && popd
 ```
 
 ### Download data (can safely be ignored)

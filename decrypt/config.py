@@ -18,7 +18,8 @@ class DataDirs:
         k_deits_outputs = k_deits_main / 'outputs'
 
     class Guardian:
-        json_folder = k_dir / "data/puzzles/"
+        # json_folder = k_dir / "data/puzzles/"
+        json_folder = k_dir / "data/guardian_2020_10_08.json"
 
     class OriginalData:
         k_xd_cw = k_dir / "data/original/xd/clues.tsv"
