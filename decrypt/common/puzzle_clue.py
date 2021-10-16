@@ -22,13 +22,13 @@ class BaseClue:
     lengths: List[int]
     soln: str
     soln_with_spaces: str = field(init=False)  # soln string, but has spaces between words for multi-word answers
-    idx: int = field(init=False)  # unique index in the set
-    dataset: str = field(init=False)  # source dataset
+    idx: int = field(init=False)               # unique index in the set
+    dataset: str = field(init=False)           # source dataset
 
     def __post_init__(self):
         self.soln = self.soln.lower()
         self.__populate_soln_with_spaces()
-        self.idx = -1  # initially set to -1; but will be set in get_clean_clues()
+        self.idx = -1                           # initially set to -1; but will be set in get_clean_clues()
         self.dataset = ""
 
     def __populate_soln_with_spaces(self):
@@ -62,7 +62,7 @@ class BaseClue:
 
     @classmethod
     def from_json(cls, json_obj: Dict) -> BaseClue:
-        json_obj_no_soln_with_spaces = json_obj.copy()
+        json_obj_no_soln_with_spaces = json_obj.copy()      # copy bc we will modify
         json_obj_no_soln_with_spaces.pop('soln_with_spaces')
         return cls(**json_obj_no_soln_with_spaces)
 
@@ -97,6 +97,30 @@ class GuardianClue(ClueWithGridInfo):
             soln_with_spaces=gc.soln_with_spaces,
             lengths=gc.lengths
         )
+
+# In order to anonymize the dataset
+@dataclass
+class CleanGuardianClue(GuardianClue):
+    def __post_init__(self):
+        super().__post_init__()
+        # ClueWithGridInfo
+        self.across_or_down = ""
+        self.pos = (0,0)
+
+        self.unique_clue_id = ""
+        self.number = 0
+        self.id = ""
+        self.dataset = ""
+
+    @classmethod
+    def from_json(cls, json_obj: Dict) -> CleanGuardianClue:
+        # duplicates from_json in BaseClue
+        # we need to pop soln_with_spaces bc post_init will be called (todo: do we?)
+        json_clean = json_obj.copy()      # copy bc we will modify
+        for k in ['soln_with_spaces', 'idx', 'dataset']:
+            json_clean.pop(k)
+        json_clean['lengths_punctuation'] = set(json_clean['lengths_punctuation'])
+        return cls(**json_clean)
 
 
 ###
