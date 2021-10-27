@@ -7,6 +7,7 @@ This repository is the official implementation of
 Puzzles as a Target for NLP](https://arxiv.org/abs/2104.08620). 
 
 [comment]: <> (>📋  todo Optional: include a graphic explaining your approach/main result, bibtex entry, link to demos, blog posts and tutorials)
+The dataset is also available at https://doi.org/10.5061/dryad.n02v6wwzp
 
 ## Requirements
 
@@ -20,7 +21,7 @@ pip install -r requirements.txt
 ```setup
 git clone <anonymized>  # if using code supplement, just unzip
 cd decrypt
-pushd ./data && unzip guardian_2020_10_08.json.zip && popd
+pushd ./data && unzip "*.json.zip" && popd
 ```
 
 ### Download data (can safely be ignored)
@@ -31,7 +32,8 @@ cd decrypt
 mkdir -p './data/puzzles'
 python decrypt/scrape_parse/guardian_scrape.py --save_directory="./data/puzzles"
 ```
-Then when you run `load_guardian_splits` you will run `load_guardian_splits("./data/puzzles", load_from_files=True)`
+Then when you run `load_guardian_splits` you will run 
+`load_guardian_splits("./data/puzzles", load_from_files=True, use_premade_json=False)`
 
 
 # Reproducing our splits
@@ -61,7 +63,7 @@ Alternatively, if you don't care, you can pass `verify=False` to
 `load_guardian_splits`
 """
 
-soln_to_clue_map, all_clues_list, (train, val, test) = load_guardian_splits("./data/")
+soln_to_clue_map, all_clues_list, (train, val, test) = load_guardian_splits()
 ```
 
 ## Replicating our work

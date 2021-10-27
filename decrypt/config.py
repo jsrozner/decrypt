@@ -21,6 +21,11 @@ class DataDirs:
         # json_folder = k_dir / "data/puzzles/"
         json_folder = k_dir / "data/guardian_2020_10_08.json"
 
+        # splits json
+        naive_random = k_dir / "data/naive_random.json"
+        disjoint = k_dir / "data/disjoint.json"
+        disjoint_word_init = k_dir / "data/disjoint_word_init.json"
+
     class OriginalData:
         k_xd_cw = k_dir / "data/original/xd/clues.tsv"
         k_US_dic = k_dir / "data/original/us/US.dic"

@@ -17,6 +17,7 @@ from decrypt.common.puzzle_clue import (
     filter_clues, make_stc_map
 )
 from .util import _gen_filename, str_hash as safe_hash
+from decrypt.config import DataDirs
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
@@ -325,7 +326,6 @@ def get_clean_clues(json_file_or_json_dir,
 
 
 
-
 def check_splits(all_clues, input_tuple):
     train, val, test = input_tuple
 
@@ -342,7 +342,45 @@ def check_splits(all_clues, input_tuple):
 SplitReturn = Tuple[Dict[str, List[BaseClue]], List[BaseClue], Tuple[List[BaseClue], ...]]
 
 
-def load_guardian_splits(json_dir, seed=42, verify=True, load_from_files=False) -> SplitReturn:
+# Use to load splits directly, without recreating them
+def load_splits_from_json(json_file_name) -> SplitReturn:
+    try:
+        log.info(f'Loading splits directly from given json files. Using {json_file_name}')
+        with open(json_file_name, 'r') as f:
+            splits_dict = json.load(f)
+    except FileNotFoundError as e:
+        log.error('Json not found. Did you unzip as per the readme?')
+        raise e
+
+    split_tuple = splits_dict['train'], splits_dict['val'], splits_dict['test']
+    clue_list_tuple = tuple([list(map(CleanGuardianClue.from_json, split)) for split in split_tuple])
+    all_clues = [c for clue_list in clue_list_tuple for c in clue_list]
+    soln_to_clue_map = make_stc_map(all_clues)
+
+    # note that there will be no indices in these clues
+
+    # print the distribution
+    ctr = Counter()
+    for c in all_clues:
+        ctr[len(c.lengths)] += 1
+    log.info(ctr)
+
+    # Verify same length
+    assert sum(map(len, soln_to_clue_map.values())) == len(all_clues)
+
+    assert len(all_clues) == 142380, f'Your clues do not match the ones in Decrypting paper'
+    log.info(f'Clue list length matches Decrypting paper expected length')
+
+    check_splits(all_clues, clue_list_tuple)
+
+    return soln_to_clue_map, all_clues, clue_list_tuple
+
+
+def load_guardian_splits(json_dir="", seed=42, verify=True, load_from_files=False,
+                         use_premade_json=True) -> SplitReturn:
+    if use_premade_json:
+        return load_splits_from_json(DataDirs.Guardian.naive_random)
+
     soln_to_clue_map, all_clues = get_clean_clues(json_dir, verify=verify, load_from_json_files=load_from_files)
     train, test = train_test_split(all_clues, test_size=0.2, random_state=seed)
     train, val = train_test_split(train, test_size=0.25, random_state=seed)
@@ -356,7 +394,12 @@ def load_guardian_splits(json_dir, seed=42, verify=True, load_from_files=False) 
     return soln_to_clue_map, all_clues, (train, val, test)
 
 
-def load_guardian_splits_disjoint(json_dir, seed=42, verify=True, load_from_files=False) -> SplitReturn:
+def load_guardian_splits_disjoint(json_dir="", seed=42, verify=True,
+                                  load_from_files=False,
+                                  use_premade_json=True) -> SplitReturn:
+    if use_premade_json:
+        return load_splits_from_json(DataDirs.Guardian.disjoint)
+
     soln_to_clue_map, all_clues = get_clean_clues(json_dir, verify=verify, load_from_json_files=load_from_files)
 
     splits = [0.2, 0.25]
@@ -385,6 +428,7 @@ def load_guardian_splits_disjoint(json_dir, seed=42, verify=True, load_from_file
 
 def make_disjoint_split(all_clues: List[BaseClue],
                         seed=42) -> Tuple[List[BaseClue], ...]:
+
     soln_to_clue_map = make_stc_map(all_clues)
     train, val, test = [], [], []
     for k, v in soln_to_clue_map.items():
@@ -405,11 +449,16 @@ def make_disjoint_split(all_clues: List[BaseClue],
     return out_tuple
 
 
-def load_guardian_splits_disjoint_hash(json_dir: str, seed=42, verify=True, load_from_files=False) -> SplitReturn:
+def load_guardian_splits_disjoint_hash(json_dir="", seed=42, verify=True,
+                                       load_from_files=False,
+                                       use_premade_json=True) -> SplitReturn:
     """
     Produce a disjoint split based on hashing the first two letters
     :return: SplitReturn (see this file)
     """
+    if use_premade_json:
+        return load_splits_from_json(DataDirs.Guardian.disjoint_word_init)
+
     soln_to_clue_map, all_clues = get_clean_clues(json_dir, verify=verify, load_from_json_files=load_from_files)
     out_tuple = make_disjoint_split(all_clues, seed)
 
