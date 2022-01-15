@@ -5,6 +5,7 @@
 This repository is the official implementation of 
 [Decrypting Cryptic Crosswords: Semantically Complex Wordplay 
 Puzzles as a Target for NLP](https://arxiv.org/abs/2104.08620). 
+Please cite arxiv or [Neurips 2021 version](https://proceedings.neurips.cc/paper/2021/hash/5f1d3986fae10ed2994d14ecd89892d7-Abstract.html)
 
 [comment]: <> (>📋  todo Optional: include a graphic explaining your approach/main result, bibtex entry, link to demos, blog posts and tutorials)
 The dataset is also available at https://doi.org/10.5061/dryad.n02v6wwzp
